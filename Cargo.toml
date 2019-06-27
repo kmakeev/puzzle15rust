@@ -1,0 +1,14 @@
+[package]
+name = "puzzle"
+version = "0.1.0"
+authors = ["kmakeev <kmakeev@arbitr.ru>"]
+edition = "2018"
+
+[dependencies]
+rand = "0.3.0"
+tuple = "0.4.2"
+
+[profile.dev]
+debug = true
+opt-level = 0
+
