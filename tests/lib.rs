@@ -74,3 +74,76 @@ fn it_search_sets_test() {
     assert_eq!(sets[2], vec![8, 10, 6, 2, 9, 4, 0, 11, 1, 3, 5, 7]);
     assert_eq!(sets[3], vec![8, 10, 6, 2, 9, 4, 11, 1, 0, 3, 5, 7]);
 }
+
+#[test]
+fn it_check_linear_conflict_test() {
+    let puzzle = Puzzle::new(3, 3).unwrap();
+    assert_eq!(0, puzzle.check_linear_conflict(0,vec![0,1,5]));
+    assert_eq!(0, puzzle.check_linear_conflict(0,vec![1,0,2]));
+    assert_eq!(2, puzzle.check_linear_conflict(0,vec![3,1,2]));
+    assert_eq!(2, puzzle.check_linear_conflict(0,vec![1,3,2]));
+    assert_eq!(2, puzzle.check_linear_conflict(0,vec![2,3,1]));
+    assert_eq!(2, puzzle.check_linear_conflict(1,vec![5,4,1]));
+    assert_eq!(2, puzzle.check_linear_conflict(1,vec![4,6,5]));
+    assert_eq!(2, puzzle.check_linear_conflict(2,vec![8,7,1]));
+    assert_eq!(0, puzzle.check_linear_conflict(0,vec![1,3,0]));
+    assert_eq!(0, puzzle.check_linear_conflict(0,vec![4,6,5]));
+    assert_eq!(0, puzzle.check_linear_conflict(1,vec![0,9,8]));
+    let puzzle = Puzzle::new(4, 4).unwrap();
+    assert_eq!(0, puzzle.check_linear_conflict(0,vec![1,2,3,4]));
+    assert_eq!(2, puzzle.check_linear_conflict(0,vec![1,3,2,4]));
+    assert_eq!(2, puzzle.check_linear_conflict(1,vec![5,6,8,7]));
+    assert_eq!(2, puzzle.check_linear_conflict(1,vec![0,8,7,6]));
+    assert_eq!(2, puzzle.check_linear_conflict(2,vec![9,10,12,11]));
+    assert_eq!(2, puzzle.check_linear_conflict(3,vec![0,14,13,15]));
+    assert_eq!(0, puzzle.check_linear_conflict(2,vec![9,0,10,6]));
+    let puzzle = Puzzle::new(4, 3).unwrap();
+    assert_eq!(0, puzzle.check_linear_conflict(0,vec![0,1,5,9]));
+    assert_eq!(0, puzzle.check_linear_conflict(0,vec![1,2,5,4]));
+    assert_eq!(0, puzzle.check_linear_conflict(0,vec![10,3,9,4]));
+    assert_eq!(2, puzzle.check_linear_conflict(0,vec![1,4,5,3]));
+    assert_eq!(2, puzzle.check_linear_conflict(0,vec![4,5,0,1]));
+    assert_eq!(0, puzzle.check_linear_conflict(1,vec![0,4,3,1]));
+    assert_eq!(0, puzzle.check_linear_conflict(1,vec![5,6,9,7]));
+    assert_eq!(2, puzzle.check_linear_conflict(1,vec![6,7,9,5]));
+    assert_eq!(2, puzzle.check_linear_conflict(1,vec![0,6,5,9]));
+    assert_eq!(0, puzzle.check_linear_conflict(2,vec![0,10,11,5]));
+    assert_eq!(0, puzzle.check_linear_conflict(2,vec![9,1,11,5]));
+    assert_eq!(2, puzzle.check_linear_conflict(2,vec![12,0,11,5]));
+    assert_eq!(2, puzzle.check_linear_conflict(2,vec![5,0,12,11]));
+    let puzzle = Puzzle::new(5, 3).unwrap();
+    assert_eq!(0, puzzle.check_linear_conflict(0,vec![9,1,3,5,0]));
+    assert_eq!(2, puzzle.check_linear_conflict(0,vec![0,3,2,5,9]));
+
+}
+
+#[test]
+fn it_check_column_conflict_test() {
+    let puzzle = Puzzle::new(3, 3).unwrap();
+    assert_eq!(0, puzzle.check_column_conflict(0, vec![1, 4, 6]));
+    assert_eq!(0, puzzle.check_column_conflict(0, vec![1, 0, 7]));
+    assert_eq!(0, puzzle.check_column_conflict(0, vec![8, 2, 6]));
+    assert_eq!(0, puzzle.check_column_conflict(2, vec![4, 1, 7]));
+    assert_eq!(2, puzzle.check_column_conflict(0, vec![1, 7, 4]));
+    assert_eq!(2, puzzle.check_column_conflict(0, vec![7, 1, 0]));
+    assert_eq!(2, puzzle.check_column_conflict(1, vec![2, 8, 5]));
+    assert_eq!(2, puzzle.check_column_conflict(1, vec![0, 5, 2]));
+    assert_eq!(2, puzzle.check_column_conflict(2, vec![0,6, 3]));
+    assert_eq!(2, puzzle.check_column_conflict(2, vec![6,7, 3]));
+    let puzzle = Puzzle::new(4, 4).unwrap();
+    assert_eq!(0, puzzle.check_column_conflict(0,vec![1,5,9,13]));
+    assert_eq!(2, puzzle.check_column_conflict(0,vec![1,9,5,4]));
+    assert_eq!(2, puzzle.check_column_conflict(1,vec![10,6,1,2]));
+    assert_eq!(2, puzzle.check_column_conflict(1,vec![2,0,14,10]));
+    assert_eq!(2, puzzle.check_column_conflict(2,vec![3,7,15,11]));
+    assert_eq!(2, puzzle.check_column_conflict(3,vec![8,4,0,1]));
+    assert_eq!(0, puzzle.check_column_conflict(2,vec![0,3,11,6]));
+    let puzzle = Puzzle::new(4, 3).unwrap();
+    assert_eq!(0, puzzle.check_column_conflict(0,vec![1,5,9]));
+    assert_eq!(0, puzzle.check_column_conflict(1,vec![2,6,10]));
+    assert_eq!(0, puzzle.check_column_conflict(1,vec![6,1,10]));
+    assert_eq!(2, puzzle.check_column_conflict(0,vec![5,8,1]));
+    assert_eq!(0, puzzle.check_column_conflict(1,vec![5,8,1]));
+    assert_eq!(2, puzzle.check_column_conflict(2,vec![7,1,3]));
+
+}

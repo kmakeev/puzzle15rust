@@ -117,7 +117,7 @@ impl Puzzle {
         // assert_eq!(self.start.len() as i8, self.size_h*self.size_v);
     }
     pub fn set_puzzle(& mut self, puz:Vec<i8>) -> bool {
-        println!("H in set puzzle: {:?}", puz.len() as i8 / self.size_v);
+        // println!("H in set puzzle: {:?}", puz.len() as i8 / self.size_v);
         let mut is_good:bool = false;
         if puz.len() as i8 % (self.size_v*self.size_h) !=0 {
             is_good
@@ -184,32 +184,28 @@ impl Puzzle {
                    if pos / self.size_h > 0 {
                        tmp = prev.clone();
                        c = prev[(pos - self.size_h) as usize];
-                       tmp.remove((pos - self.size_h) as usize);
-                       tmp.insert((pos - self.size_h) as usize, 0);
+                       tmp[(pos - self.size_h) as usize] = 0;
                        tmp[pos as usize] = c;
                        result.push(tmp);
                    }
                    if (pos + self.size_h) < (self.size_v*self.size_h) {
                        tmp = prev.clone();
                        c = prev[(pos + self.size_h) as usize];
-                       tmp.remove((pos + self.size_h) as usize);
-                       tmp.insert((pos + self.size_h) as usize, 0);
+                       tmp[(pos + self.size_h) as usize] = 0;
                        tmp[pos as usize] = c;
                        result.push(tmp);
                    }
                    if pos % self.size_v > 0 {
                        tmp = prev.clone();
                        c = prev[(pos - 1) as usize];
-                       tmp.remove((pos - 1) as usize);
-                       tmp.insert((pos - 1) as usize, 0);
+                       tmp[(pos - 1) as usize] = 0;
                        tmp[pos as usize] = c;
                        result.push(tmp);
                    }
                    if (pos % self.size_h) < (self.size_h-1) {
                        tmp = prev.clone();
                        c = prev[(pos + 1) as usize];
-                       tmp.remove((pos + 1) as usize);
-                       tmp.insert((pos + 1) as usize, 0);
+                       tmp[(pos + 1) as usize] = 0;
                        tmp[pos as usize] = c;
                        result.push(tmp);
                    }
@@ -217,5 +213,122 @@ impl Puzzle {
                }
         }
     }
+
+    pub fn check_linear_conflict(& self, idx: i8, line: Vec<i8>) -> i8 {
+        let mut is_conflict:i8 = 0;
+        if line.len() as i8 > self.size_h {
+            is_conflict
+        } else {
+            for (c, j) in line[..line.len()-1].iter().enumerate() {
+                if *j > (0 + idx*self.size_h) && (*j <= self.size_h*(idx+1)) {
+                    for i in line[c + 1..line.len()].to_vec() {
+                        if i > (0 + idx*self.size_h) && (i <= self.size_h*(idx+1)) && *j>i {
+                            is_conflict = 2;
+                            break;
+                        }
+                    }
+                    if is_conflict > 0 {
+                        break;
+                    }
+                }
+            }
+            is_conflict
+        }
+    }
+
+    pub fn check_column_conflict(& self, idx: i8, line: Vec<i8>) -> i8 {
+        let mut is_conflict:i8 = 0;
+        if line.len() as i8 > self.size_v {
+            is_conflict
+        } else {
+            for (c, j) in line[..line.len()-1].iter().enumerate() {
+                if *j % self.size_h == ((idx+1) % self.size_h) {
+                    for i in line[c + 1..line.len()].to_vec() {
+                        if i!=0 && (i % self.size_h) == ((idx+1) % self.size_h)
+                            && *j/self.size_h > i/self.size_h {
+                            is_conflict = 2;
+                            break;
+                        }
+                    }
+                }
+                if is_conflict > 0 {
+                    break;
+                }
+            }
+            is_conflict
+        }
+    }
+
+    pub fn cost(& self, line: Vec<i8>) -> (bool,i8) {
+        let mut cost:i8 = 0;
+        if line.len() as i8 != self.size_v*self.size_v {
+            (false, cost)
+        } else {
+            for  (c, j) in line.iter().enumerate() {
+                if *j != 0 {
+                    let mut v: i8 = (((*j-1) / self.size_v) - (c as i8 / self.size_v)).abs();
+                    let mut h: i8 = (((*j-1) % self.size_h) - (c as i8 % self.size_h)).abs();
+                    cost = cost + v + h;
+                }
+            }
+            if cost > 0 && self.size_v > 2 && self.size_h > 2 {
+
+                // check linear conflict for all lines
+                for i in 0..self.size_v {
+                    if i < (self.size_v-1) {
+                        cost = cost + self.check_linear_conflict(i,
+                                                                 line[(self.size_v*i) as usize..(self.size_v*i+self.size_h) as usize].to_vec());
+
+                    }
+                }
+                // check column conflict for all columns
+                for i in 0..self.size_h {
+                    let mut col: Vec<i8> = vec![];
+                    for j in 0..self.size_v {
+                        col.push(line[(i + j*self.size_h) as usize]);
+                    }
+                    cost = cost + self.check_column_conflict(i, col);
+                }
+                // check last move conflict
+                let mut position1: i8;
+                let mut position2: i8;
+                position1 = line.iter().position(|&r| r == (self.size_h - 1) * self.size_v).unwrap() as i8;
+                position2 = line.iter().position(|&r| r == self.size_h * self.size_v - 1).unwrap() as i8;
+                // println!("{} , {}", (position2 + 1) % self.size_h, self.size_h*(self.size_v-1));
+                if (position2 + 1) % self.size_h != 0 && (position1 < self.size_h*(self.size_v-1)) {
+                    // println!("{} , {}", (position2 + 1) % self.size_h, self.size_h*(self.size_v-1));
+                    cost +=2;
+                }
+                // check left top agle on conflict
+                if line[1] == 2 && line[self.size_h as usize]==self.size_h +1 && line[0] != 1{
+                    // Check use conflict in line or column
+                    // if (line[0] > self.size_h) && (line[0] % self.size_h == 1) &&
+                    //    ((line[0] % self.size_h) != (1 % self.size_h)) {                                  //if not use
+                        cost +=2;
+                    // }
+                }
+                // check right top agle on conflict
+                if line[(self.size_h -2) as usize] == self.size_h - 1 &&
+                    line[(2*self.size_h -1) as usize] == self.size_h*2  &&
+                    line[(self.size_h - 1) as usize] != self.size_h {
+                    // if line[(self.size_h-1) as usize] < self.size_h {
+                        cost +=2;                                               //if not use
+                    // }
+
+                }
+                // check left bottom  agle on conflict
+                if line[(self.size_h*(self.size_v - 2)) as usize] == self.size_h*(self.size_v - 2) &&
+                    line[(self.size_h*(self.size_v-1) + 1) as usize] == self.size_h*(self.size_v-1) + 2 &&
+                    line[(self.size_h*(self.size_v-1)) as usize] != self.size_h*(self.size_v-1) +1 {
+                    // if line[(self.size_h*(self.size_v-1)) as usize] > self.size_h*(self.size_v-1) +1 {  //if not use
+                        cost +=2;
+                    // }
+                }
+
+            }
+            (true, cost)
+        }
+    }
+
 
 }
