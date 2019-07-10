@@ -1,24 +1,38 @@
 extern crate rand;
-// extern crate tuple;
 
 use rand::Rng;
 use std::convert::TryFrom;
 use std::fmt;
 use std::sync::Arc;
-// use test::Options;
-// use tuple::*;
+
+use std::collections::hash_map::DefaultHasher;
+use std::hash::{Hash, Hasher};
 
 pub struct Point {
     pub h: i8,
     pub v: i8,
 }
 
-struct Set {
-    g: u32,
-    h: u32,
-    f: u32,
-    prev: Vec<i8>,
-    goal: Vec<i8>,
+#[derive(Hash, Eq, PartialEq, Clone)]
+pub struct Set {
+    pub g: u32,
+    pub h: u32,
+    pub f: u32,
+    pub position: Vec<i8>,
+}
+
+
+fn calculate_hash<T: Hash> (t: &T) -> u64 {
+    let mut s = DefaultHasher::new();
+    t.hash(&mut s);
+    s.finish()
+}
+
+#[derive(Clone)]
+pub struct Step {
+    pub hash_prev: u64,
+    pub set: Set,
+    pub hash_current: u64,
 }
 
 pub struct Puzzle {
@@ -26,7 +40,7 @@ pub struct Puzzle {
     pub size_v: i8,
     pub puzzle: Vec<i8>,
     // pub start: Vec<Point>,
-    // pub goal: Vec<Point>,
+    // pub goal: Vec<Point>,ƒ
     pub start: Vec<i8>,
     pub goal: Vec<i8>,
 }
@@ -40,8 +54,8 @@ impl fmt::Debug for Point {
 
 impl fmt::Debug for Set {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "[g - {}, h - {}, f - {}, prev - {:?}, goal - {:?}]", self.g, self.h, self.f,
-                                                                        self.prev, self.goal)
+        write!(f, "[g - {}, h - {}, f - {}, position - {:?}]", self.g, self.h, self.f,
+                                                                        self.position)
     }
 }
 
@@ -64,12 +78,6 @@ impl Puzzle {
             }
             start.push(0);
             goal.push(0);
-            // assert_eq!(goal.len() as i8, size_h*size_v);
-            // for _i in 0..size_h*size_v {
-            //    start.push(Point{h:0, v:0})
-            // }
-            // assert_eq!(start.len() as i8, size_h*size_v);
-            // println!("My null tuple {:#?}", start);
             Some(Puzzle{size_h, size_v, puzzle, start, goal})
         } else {
             None
@@ -78,16 +86,12 @@ impl Puzzle {
     pub fn generate(& mut self) {
         let mut is_generate: bool = true;
         let mut x: i8;
-        //let mut i: i8 = 0;
         while is_generate {
             self.puzzle = vec![];
             while self.puzzle.len() < usize::try_from(self.size_h * self.size_v - 1).unwrap() {
                 x = rand::thread_rng().gen_range(1,self.size_h * self.size_v);
                 if self.puzzle.iter().position(|&r| r == x) == None {
                     self.puzzle.push(x);
-                    // self.start[i as usize] = x;
-                    //self.start[(x-1) as usize] = Point{h:i / self.size_h, v:i % self.size_v};
-                    //i += 1;
                 }
             }
 
@@ -111,10 +115,6 @@ impl Puzzle {
         }
         self.puzzle.push(0);
         self.start = self.puzzle.clone();
-        // self.start.push(0);
-        //self.start[self.puzzle.len()-1] = Point{h:self.size_h-1, v:self.size_v-1};
-        // assert_eq!(self.puzzle.len() as i8, self.size_h*self.size_v);
-        // assert_eq!(self.start.len() as i8, self.size_h*self.size_v);
     }
     pub fn set_puzzle(& mut self, puz:Vec<i8>) -> bool {
         // println!("H in set puzzle: {:?}", puz.len() as i8 / self.size_v);
@@ -145,24 +145,67 @@ impl Puzzle {
         }
 
     }
-    pub fn search_solution(& self) {
+    pub fn search_solution(& self) -> Vec<Step> {
         let h:i8 = self.size_h;
         let v:i8 = self.size_v;
-        let goal:Vec<i8> = self.goal.clone();
-        let start:Vec<i8> = self.start.clone();
-        // println!("Start in search: {:?}", start);
-        // println!("Goal in search: {:?}", goal);
-        let mut open_sets:Vec<Set> = vec![];
-        let mut close_sets:Vec<Set> = vec![];
-        let mut new_sets:Vec<i8>;
+        let mut path_map:Vec<Step> = vec![];
+        let mut open_sets:Vec<Step> = vec![];
+        let mut close_sets:Vec<Step> = vec![];
+        let mut sets: Vec<Vec<i8>>;
         let mut g:u32 = 0;
-        let mut h:u32 = 100;
-        let mut f:u32 = g+h;
-        let first_set:Set = Set{g:g, h:h, f:f, prev:start, goal:goal};
-        println!("First set in search: {:?}", first_set);
-        open_sets.push(first_set);
-        println!("Open_sets in search: {:?}", open_sets);
+        let mut f:u32;
+        let (cost, h) = self.cost(self.start.clone());
+        f = g+h;
+        open_sets.push(Step{hash_prev: 0, set:Set{g:g, h:h, f:f, position:self.start.clone()},
+            hash_current: calculate_hash(&Set{g:g, h:h, f:f, position:self.start.clone()})});
+        while open_sets.len() !=0 {
+            let mut prev = open_sets.pop().unwrap();
+            close_sets.push(prev.clone());
 
+            if prev.set.position.clone() == self.goal {
+                path_map.push(prev.clone());
+                while prev.hash_prev != 0 {
+                    let pos_opt = close_sets.iter().position(|r| r.hash_current == prev.clone().hash_prev);
+                    prev = close_sets[pos_opt.unwrap()].clone();
+                    path_map.push(prev.clone());
+                }
+                break;
+            }
+            sets = self.search_sets(prev.set.position.clone());
+            for new in sets {
+                if close_sets.iter().position(|r| r.set.position == new) != None {
+                    // println!("new set - {:?} is in close, continue...", new);
+                    continue;
+                }
+                let mut tentive_g_score:u32 = prev.set.g + 1;
+                let mut tentive_is_better:bool = false;
+                let pos_opt:Option<usize>;
+                pos_opt = open_sets.iter().position(|r| r.set.position == new);
+                if pos_opt == None {
+                    tentive_is_better = true;
+                } else {
+                    if tentive_g_score < open_sets[pos_opt.unwrap()].set.g {
+                        tentive_is_better = true;
+                    }
+                }
+                if tentive_is_better {
+                    let (cost_, h_) = self.cost(new.clone());
+                    if cost_ {
+                        g = tentive_g_score;
+                        f = g+h_;
+                        let set:Set = Set{g:g, h:h_, f:f, position:new};
+                        let hash = calculate_hash(&set);
+                        // println!("Found set -: {:?} witsh hash - {:?}", set, hash);
+                        open_sets.push(Step{hash_prev:prev.hash_current, set:set, hash_current:hash})
+
+                    }
+                }
+
+            }
+            open_sets.sort_by(|a, b| b.set.f.cmp(&a.set.f));
+        }
+
+        return path_map;
     }
 
     pub fn search_sets(& self, prev: Vec<i8>) -> Vec<Vec<i8>> {
@@ -214,8 +257,8 @@ impl Puzzle {
         }
     }
 
-    pub fn check_linear_conflict(& self, idx: i8, line: Vec<i8>) -> i8 {
-        let mut is_conflict:i8 = 0;
+    pub fn check_linear_conflict(& self, idx: i8, line: Vec<i8>) -> u32 {
+        let mut is_conflict:u32 = 0;
         if line.len() as i8 > self.size_h {
             is_conflict
         } else {
@@ -236,8 +279,8 @@ impl Puzzle {
         }
     }
 
-    pub fn check_column_conflict(& self, idx: i8, line: Vec<i8>) -> i8 {
-        let mut is_conflict:i8 = 0;
+    pub fn check_column_conflict(& self, idx: i8, line: Vec<i8>) -> u32 {
+        let mut is_conflict:u32 = 0;
         if line.len() as i8 > self.size_v {
             is_conflict
         } else {
@@ -259,28 +302,27 @@ impl Puzzle {
         }
     }
 
-    pub fn cost(& self, line: Vec<i8>) -> (bool,i8) {
-        let mut cost:i8 = 0;
-        if line.len() as i8 != self.size_v*self.size_v {
+    pub fn cost(& self, line: Vec<i8>) -> (bool,u32) {
+        let mut cost:u32 = 0;
+        if line.len() as i8 != self.size_v*self.size_h {
             (false, cost)
         } else {
             for  (c, j) in line.iter().enumerate() {
                 if *j != 0 {
                     let mut v: i8 = (((*j-1) / self.size_v) - (c as i8 / self.size_v)).abs();
                     let mut h: i8 = (((*j-1) % self.size_h) - (c as i8 % self.size_h)).abs();
-                    cost = cost + v + h;
+                    cost = cost + v as u32 + h as u32;
                 }
             }
+            // println!("cost without conflict - {}" , cost);
             if cost > 0 && self.size_v > 2 && self.size_h > 2 {
 
                 // check linear conflict for all lines
                 for i in 0..self.size_v {
-                    if i < (self.size_v-1) {
                         cost = cost + self.check_linear_conflict(i,
                                                                  line[(self.size_v*i) as usize..(self.size_v*i+self.size_h) as usize].to_vec());
-
-                    }
                 }
+                // println!("cost with h line conflict - {}" , cost);
                 // check column conflict for all columns
                 for i in 0..self.size_h {
                     let mut col: Vec<i8> = vec![];
@@ -288,7 +330,9 @@ impl Puzzle {
                         col.push(line[(i + j*self.size_h) as usize]);
                     }
                     cost = cost + self.check_column_conflict(i, col);
+
                 }
+                // println!("cost with h+v line conflict - {}" , cost);
                 // check last move conflict
                 let mut position1: i8;
                 let mut position2: i8;
@@ -299,11 +343,10 @@ impl Puzzle {
                     // println!("{} , {}", (position2 + 1) % self.size_h, self.size_h*(self.size_v-1));
                     cost +=2;
                 }
+                // println!("cost with line and last move conflict - {}" , cost);
                 // check left top agle on conflict
                 if line[1] == 2 && line[self.size_h as usize]==self.size_h +1 && line[0] != 1{
                     // Check use conflict in line or column
-                    // if (line[0] > self.size_h) && (line[0] % self.size_h == 1) &&
-                    //    ((line[0] % self.size_h) != (1 % self.size_h)) {                                  //if not use
                         cost +=2;
                     // }
                 }
@@ -326,9 +369,9 @@ impl Puzzle {
                 }
 
             }
+            // println!("result cost - {}" , cost);
             (true, cost)
         }
     }
-
 
 }

@@ -147,3 +147,33 @@ fn it_check_column_conflict_test() {
     assert_eq!(2, puzzle.check_column_conflict(2,vec![7,1,3]));
 
 }
+
+#[test]
+fn it_cost_test() {
+    let mut puzzle = Puzzle::new(2, 2).unwrap();
+    assert!(puzzle.set_puzzle(vec![1,2,3,0]));
+    assert_eq!((true, 0), puzzle.cost(puzzle.start.clone()));
+    assert_eq!((false, 0), puzzle.cost(vec![1,2,0,3,4]));
+    assert_eq!((true, 1), puzzle.cost(vec![1,2,0,3]));
+    assert_eq!((true, 5), puzzle.cost(vec![2,3,0,1]));
+    let mut puzzle = Puzzle::new(3, 3).unwrap();
+    assert!(puzzle.set_puzzle(vec![1,2,3,4,5,6,7,8,0]));
+    assert_eq!((true, 0), puzzle.cost(puzzle.start.clone()));
+    assert_eq!((true, 1), puzzle.cost(vec![1,2,3,4,5,0,7,8,6]));
+    assert_eq!((true, 16), puzzle.cost(vec![1,3,2,6,4,5,8,7,0]));
+    assert_eq!((true, 12), puzzle.cost(vec![7,3,2,4,5,6,1,8,0]));
+    assert_eq!((true, 14), puzzle.cost(vec![8,2,7,1,6,3,4,5,0]));
+    assert_eq!((true, 14), puzzle.cost(vec![1,2,8,6,3,4,5,7,0]));
+    assert_eq!((true, 14), puzzle.cost(vec![3,2,5,1,7,6,4,8,0]));
+    assert_eq!((true, 16), puzzle.cost(vec![5,7,6,3,0,2,1,4,8]));
+    let mut puzzle = Puzzle::new(3, 4).unwrap();
+    assert!(puzzle.set_puzzle(vec![1,2,3,4,5,6,7,8,9,10,11,0]));
+    assert_eq!((true, 0), puzzle.cost(vec![1,2,3,4,5,6,7,8,9,10,11,0]));
+    let mut puzzle = Puzzle::new(4, 4).unwrap();
+    assert!(puzzle.set_puzzle(vec![1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,0]));
+    assert_eq!((true, 0), puzzle.cost(puzzle.start.clone()));
+    assert_eq!((true, 34), puzzle.cost(vec![2,9,3,6,15,13,11,7,5,8,4,1,10,12,14,0]));
+    assert_eq!((true, 24), puzzle.cost(vec![9,2,6,4,7,3,12,8,1,10,5,15,11,13,14,0]));
+
+
+}
