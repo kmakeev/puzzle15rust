@@ -4,7 +4,7 @@ use puzzle::puzzle::Puzzle as Puzzle;
 
 fn main() {
 
-    let tmp_puzzle = Puzzle::new(3,3);
+    let tmp_puzzle = Puzzle::new(4,4);
     match tmp_puzzle {
         None => {
             println!("Use not supported puzzle size");

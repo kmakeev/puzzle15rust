@@ -184,8 +184,10 @@ impl Puzzle {
                 if pos_opt == None {
                     tentive_is_better = true;
                 } else {
+                    let tmp_ = open_sets[pos_opt.unwrap()].clone();
                     if tentive_g_score < open_sets[pos_opt.unwrap()].set.g {
                         tentive_is_better = true;
+                        open_sets.remove(pos_opt.unwrap());
                     }
                 }
                 if tentive_is_better {
@@ -320,7 +322,7 @@ impl Puzzle {
                 // check linear conflict for all lines
                 for i in 0..self.size_v {
                         cost = cost + self.check_linear_conflict(i,
-                                                                 line[(self.size_v*i) as usize..(self.size_v*i+self.size_h) as usize].to_vec());
+                                                                 line[(self.size_h*i) as usize..((self.size_h)*(i+1)) as usize].to_vec());
                 }
                 // println!("cost with h line conflict - {}" , cost);
                 // check column conflict for all columns
