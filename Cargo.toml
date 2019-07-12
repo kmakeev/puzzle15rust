@@ -6,7 +6,8 @@ edition = "2018"
 
 [dependencies]
 rand = "0.3.0"
-tuple = "0.4.2"
+rayon = "1.1"
+
 
 [profile.dev]
 debug = true

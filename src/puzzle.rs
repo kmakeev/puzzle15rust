@@ -1,4 +1,5 @@
 extern crate rand;
+extern crate rayon;
 
 use rand::Rng;
 use std::convert::TryFrom;
@@ -7,6 +8,9 @@ use std::sync::Arc;
 
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
+use std::collections::HashMap;
+use rayon::prelude::*;
+
 
 pub struct Point {
     pub h: i8,
@@ -143,68 +147,97 @@ impl Puzzle {
             }
             is_good
         }
-
     }
+
+    pub fn get_best_step(& self, map: & HashMap<Vec<i8>, Step>, f: u32) -> Vec<i8> {
+        let mut val = vec![];
+        //let mut tmp_vec: Vec<Set> = map.par_iter().map(|(k, s) | (s.set.clone())).collect();
+        let best = map.par_iter().min_by(|(k1, s1),(k2,s2)| (s1.set.f.cmp(&s2.set.f)));
+        //let best = tmp_vec.par_iter().min_by(|x,y| x.f.cmp(&y.f)).unwrap();
+        let (key, value) = best.unwrap();
+        val=key.to_vec();
+        val
+    }
+
+    pub fn get_by_hash(& self, map: & HashMap<Vec<i8>, Step>, hash: u64) -> Vec<i8> {
+        let mut val = vec![];
+        let result = map.par_iter().find_first(|(k1, s1)| (s1.hash_current == hash));
+        let (key, value) = result.unwrap();
+        val = key.to_vec();
+        val
+    }
+
+
     pub fn search_solution(& self) -> Vec<Step> {
         let h:i8 = self.size_h;
         let v:i8 = self.size_v;
         let mut path_map:Vec<Step> = vec![];
-        let mut open_sets:Vec<Step> = vec![];
-        let mut close_sets:Vec<Step> = vec![];
+        let mut h_open_sets:HashMap<Vec<i8>, Step>= HashMap::new();
+        let mut h_close_sets:HashMap<Vec<i8>, Step> = HashMap::new();
         let mut sets: Vec<Vec<i8>>;
         let mut g:u32 = 0;
         let mut f:u32;
         let (cost, h) = self.cost(self.start.clone());
         f = g+h;
-        open_sets.push(Step{hash_prev: 0, set:Set{g:g, h:h, f:f, position:self.start.clone()},
+        h_open_sets.insert(self.start.clone(), Step{hash_prev: 0, set:Set{g:g, h:h, f:f, position:self.start.clone()},
             hash_current: calculate_hash(&Set{g:g, h:h, f:f, position:self.start.clone()})});
-        while open_sets.len() !=0 {
-            let mut prev = open_sets.pop().unwrap();
-            close_sets.push(prev.clone());
 
-            if prev.set.position.clone() == self.goal {
+        while h_open_sets.len() !=0 {
+
+            let mut val = self.get_best_step(&h_open_sets, f);
+                //h_open_sets.remove(&val);
+            let mut prev = h_open_sets.remove(&val).unwrap();
+            h_close_sets.insert(val, prev.clone());
+            if prev.set.position == self.goal {
                 path_map.push(prev.clone());
                 while prev.hash_prev != 0 {
-                    let pos_opt = close_sets.iter().position(|r| r.hash_current == prev.clone().hash_prev);
-                    prev = close_sets[pos_opt.unwrap()].clone();
+                    // let pos_opt = close_sets.iter().position(|r| r.hash_current == prev.hash_prev);
+                    let mut val = self.get_by_hash(&mut h_close_sets, prev.hash_prev);
+                    prev = h_close_sets.remove(&val).unwrap();
+                    //prev = close_sets[pos_opt.unwrap()].clone();
                     path_map.push(prev.clone());
                 }
                 break;
             }
-            sets = self.search_sets(prev.set.position.clone());
+            sets = self.search_sets(prev.clone().set.position);
             for new in sets {
-                if close_sets.iter().position(|r| r.set.position == new) != None {
-                    // println!("new set - {:?} is in close, continue...", new);
-                    continue;
+
+                // if close_sets.iter().position(|r| r.set.position == new) != None {
+                match h_close_sets.get(&new) {
+                    Some(result) => {continue},
+                    None => {}
                 }
-                let mut tentive_g_score:u32 = prev.set.g + 1;
-                let mut tentive_is_better:bool = false;
-                let pos_opt:Option<usize>;
-                pos_opt = open_sets.iter().position(|r| r.set.position == new);
-                if pos_opt == None {
-                    tentive_is_better = true;
-                } else {
-                    let tmp_ = open_sets[pos_opt.unwrap()].clone();
-                    if tentive_g_score < open_sets[pos_opt.unwrap()].set.g {
-                        tentive_is_better = true;
-                        open_sets.remove(pos_opt.unwrap());
+                let tentative_g_score:u32 = prev.set.g + 1;
+                let mut tentative_is_better:bool = false;
+                let mut tentative_is_better_from_other: bool = false;
+                match h_open_sets.get(&new) {
+                    Some(pos_opt) => {
+                        if tentative_g_score < pos_opt.set.g {
+                            tentative_is_better = true;
+                            tentative_is_better_from_other = true;
+                        }
+                    },
+                    None => {
+                        tentative_is_better = true;
                     }
                 }
-                if tentive_is_better {
+                if tentative_is_better_from_other {
+                    h_open_sets.remove(&new);
+                }
+                if tentative_is_better {
                     let (cost_, h_) = self.cost(new.clone());
                     if cost_ {
-                        g = tentive_g_score;
+                        g = tentative_g_score;
                         f = g+h_;
                         let set:Set = Set{g:g, h:h_, f:f, position:new};
                         let hash = calculate_hash(&set);
                         // println!("Found set -: {:?} witsh hash - {:?}", set, hash);
-                        open_sets.push(Step{hash_prev:prev.hash_current, set:set, hash_current:hash})
+                        h_open_sets.insert(set.position.clone(),Step{hash_prev:prev.clone().hash_current, set:set, hash_current:hash});
 
                     }
                 }
 
             }
-            open_sets.sort_by(|a, b| b.set.f.cmp(&a.set.f));
         }
 
         return path_map;
