@@ -245,7 +245,7 @@ impl Puzzle {
 
             }
         }
-        println!();
+        println!( );
         return path_map;
     }
 
