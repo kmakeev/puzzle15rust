@@ -4,12 +4,14 @@ extern crate rayon;
 use rand::Rng;
 use std::convert::TryFrom;
 use std::fmt;
+use std::time;
 use std::sync::Arc;
 
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 use std::collections::HashMap;
 use rayon::prelude::*;
+use std::time::{SystemTime, Duration};
 
 
 pub struct Point {
@@ -172,8 +174,8 @@ impl Puzzle {
         let h:i8 = self.size_h;
         let v:i8 = self.size_v;
         let mut path_map:Vec<Step> = vec![];
-        let mut h_open_sets:HashMap<Vec<i8>, Step>= HashMap::new();
-        let mut h_close_sets:HashMap<Vec<i8>, Step> = HashMap::new();
+        let mut h_open_sets:HashMap<Vec<i8>, Step> = HashMap::with_capacity(100000);
+        let mut h_close_sets:HashMap<Vec<i8>, Step> = HashMap::with_capacity(1000000);
         let mut sets: Vec<Vec<i8>>;
         let mut g:u32 = 0;
         let mut f:u32;
@@ -181,9 +183,13 @@ impl Puzzle {
         f = g+h;
         h_open_sets.insert(self.start.clone(), Step{hash_prev: 0, set:Set{g:g, h:h, f:f, position:self.start.clone()},
             hash_current: calculate_hash(&Set{g:g, h:h, f:f, position:self.start.clone()})});
-
+        let mut sys_time = SystemTime::now();
         while h_open_sets.len() !=0 {
-
+            let mut now = SystemTime::now();
+            if now > sys_time + Duration::from_secs(3) {
+                print!("\r Value of calculated states - {:?}", h_close_sets.len());
+                sys_time = now;
+            }
             let mut val = self.get_best_step(&h_open_sets, f);
                 //h_open_sets.remove(&val);
             let mut prev = h_open_sets.remove(&val).unwrap();
@@ -239,7 +245,7 @@ impl Puzzle {
 
             }
         }
-
+        println!();
         return path_map;
     }
 
