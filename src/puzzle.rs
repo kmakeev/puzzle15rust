@@ -45,8 +45,6 @@ pub struct Puzzle {
     pub size_h: i8,
     pub size_v: i8,
     pub puzzle: Vec<i8>,
-    // pub start: Vec<Point>,
-    // pub goal: Vec<Point>,ƒ
     pub start: Vec<i8>,
     pub goal: Vec<i8>,
 }
@@ -69,15 +67,8 @@ impl Puzzle {
     pub fn new(size_h: i8, size_v: i8) -> Option<Puzzle> {
         if size_h > 1 && size_h < 10 && size_v > 1 && size_v < 10 {
             let puzzle: Vec<i8> = vec![];
-            // let mut start: Vec<Point> = vec![];
-            // let mut goal: Vec<Point> = vec![];
             let mut start: Vec<i8> = vec![];
             let mut goal: Vec<i8> = vec![];
-            //for i in 0..size_v {
-            //    for j in 0..size_v {
-            //        //goal.push(Point { h: i, v: j })
-            //    }
-            //}
             for i in 1..size_v*size_h {
                 start.push(i);
                 goal.push(i);
@@ -123,7 +114,6 @@ impl Puzzle {
         self.start = self.puzzle.clone();
     }
     pub fn set_puzzle(& mut self, puz:Vec<i8>) -> bool {
-        // println!("H in set puzzle: {:?}", puz.len() as i8 / self.size_v);
         let mut is_good:bool = false;
         if puz.len() as i8 % (self.size_v*self.size_h) !=0 {
             is_good
@@ -151,17 +141,15 @@ impl Puzzle {
         }
     }
 
-    pub fn get_best_step(& self, map: & HashMap<Vec<i8>, Step>, f: u32) -> Vec<i8> {
+    fn get_best_step(& self, map: & HashMap<Vec<i8>, Step>, f: u32) -> Vec<i8> {
         let mut val = vec![];
-        //let mut tmp_vec: Vec<Set> = map.par_iter().map(|(k, s) | (s.set.clone())).collect();
         let best = map.par_iter().min_by(|(k1, s1),(k2,s2)| (s1.set.f.cmp(&s2.set.f)));
-        //let best = tmp_vec.par_iter().min_by(|x,y| x.f.cmp(&y.f)).unwrap();
         let (key, value) = best.unwrap();
         val=key.to_vec();
         val
     }
 
-    pub fn get_by_hash(& self, map: & HashMap<Vec<i8>, Step>, hash: u64) -> Vec<i8> {
+    fn get_by_hash(& self, map: & HashMap<Vec<i8>, Step>, hash: u64) -> Vec<i8> {
         let mut val = vec![];
         let result = map.par_iter().find_first(|(k1, s1)| (s1.hash_current == hash));
         let (key, value) = result.unwrap();
@@ -187,7 +175,7 @@ impl Puzzle {
         while h_open_sets.len() !=0 {
             let mut now = SystemTime::now();
             if now > sys_time + Duration::from_secs(3) {
-                print!("\r Value of calculated states - {:?}", h_close_sets.len());
+                print!("\rValue of calculated states - {:?}", h_close_sets.len());
                 sys_time = now;
             }
             let mut val = self.get_best_step(&h_open_sets, f);
@@ -197,18 +185,14 @@ impl Puzzle {
             if prev.set.position == self.goal {
                 path_map.push(prev.clone());
                 while prev.hash_prev != 0 {
-                    // let pos_opt = close_sets.iter().position(|r| r.hash_current == prev.hash_prev);
                     let mut val = self.get_by_hash(&mut h_close_sets, prev.hash_prev);
                     prev = h_close_sets.remove(&val).unwrap();
-                    //prev = close_sets[pos_opt.unwrap()].clone();
                     path_map.push(prev.clone());
                 }
                 break;
             }
             sets = self.search_sets(prev.clone().set.position);
             for new in sets {
-
-                // if close_sets.iter().position(|r| r.set.position == new) != None {
                 match h_close_sets.get(&new) {
                     Some(result) => {continue},
                     None => {}
@@ -237,7 +221,6 @@ impl Puzzle {
                         f = g+h_;
                         let set:Set = Set{g:g, h:h_, f:f, position:new};
                         let hash = calculate_hash(&set);
-                        // println!("Found set -: {:?} witsh hash - {:?}", set, hash);
                         h_open_sets.insert(set.position.clone(),Step{hash_prev:prev.clone().hash_current, set:set, hash_current:hash});
 
                     }
@@ -245,7 +228,6 @@ impl Puzzle {
 
             }
         }
-        println!( );
         return path_map;
     }
 
@@ -355,7 +337,6 @@ impl Puzzle {
                     cost = cost + v as u32 + h as u32;
                 }
             }
-            // println!("cost without conflict - {}" , cost);
             if cost > 0 && self.size_v > 2 && self.size_h > 2 {
 
                 // check linear conflict for all lines
@@ -363,7 +344,6 @@ impl Puzzle {
                         cost = cost + self.check_linear_conflict(i,
                                                                  line[(self.size_h*i) as usize..((self.size_h)*(i+1)) as usize].to_vec());
                 }
-                // println!("cost with h line conflict - {}" , cost);
                 // check column conflict for all columns
                 for i in 0..self.size_h {
                     let mut col: Vec<i8> = vec![];
@@ -373,44 +353,33 @@ impl Puzzle {
                     cost = cost + self.check_column_conflict(i, col);
 
                 }
-                // println!("cost with h+v line conflict - {}" , cost);
                 // check last move conflict
                 let mut position1: i8;
                 let mut position2: i8;
                 position1 = line.iter().position(|&r| r == (self.size_h - 1) * self.size_v).unwrap() as i8;
                 position2 = line.iter().position(|&r| r == self.size_h * self.size_v - 1).unwrap() as i8;
-                // println!("{} , {}", (position2 + 1) % self.size_h, self.size_h*(self.size_v-1));
                 if (position2 + 1) % self.size_h != 0 && (position1 < self.size_h*(self.size_v-1)) {
-                    // println!("{} , {}", (position2 + 1) % self.size_h, self.size_h*(self.size_v-1));
                     cost +=2;
                 }
-                // println!("cost with line and last move conflict - {}" , cost);
                 // check left top agle on conflict
                 if line[1] == 2 && line[self.size_h as usize]==self.size_h +1 && line[0] != 1{
-                    // Check use conflict in line or column
-                        cost +=2;
-                    // }
+                    cost +=2;
                 }
                 // check right top agle on conflict
                 if line[(self.size_h -2) as usize] == self.size_h - 1 &&
                     line[(2*self.size_h -1) as usize] == self.size_h*2  &&
                     line[(self.size_h - 1) as usize] != self.size_h {
-                    // if line[(self.size_h-1) as usize] < self.size_h {
-                        cost +=2;                                               //if not use
-                    // }
+                    cost +=2;
 
                 }
                 // check left bottom  agle on conflict
                 if line[(self.size_h*(self.size_v - 2)) as usize] == self.size_h*(self.size_v - 2) &&
                     line[(self.size_h*(self.size_v-1) + 1) as usize] == self.size_h*(self.size_v-1) + 2 &&
                     line[(self.size_h*(self.size_v-1)) as usize] != self.size_h*(self.size_v-1) +1 {
-                    // if line[(self.size_h*(self.size_v-1)) as usize] > self.size_h*(self.size_v-1) +1 {  //if not use
-                        cost +=2;
-                    // }
+                    cost +=2;
                 }
 
             }
-            // println!("result cost - {}" , cost);
             (true, cost)
         }
     }

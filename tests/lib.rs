@@ -174,6 +174,17 @@ fn it_cost_test() {
     assert_eq!((true, 0), puzzle.cost(puzzle.start.clone()));
     assert_eq!((true, 34), puzzle.cost(vec![2,9,3,6,15,13,11,7,5,8,4,1,10,12,14,0]));
     assert_eq!((true, 24), puzzle.cost(vec![9,2,6,4,7,3,12,8,1,10,5,15,11,13,14,0]));
+}
 
-
+#[test]
+fn it_search_solution() {
+    let mut puzzle = Puzzle::new(3, 3).unwrap();
+    puzzle.generate();
+    let mut result = puzzle.search_solution();
+    assert_ne!(result.len() as i8, 0);
+    result.reverse();
+    assert_eq!(0, result[0].hash_prev);
+    for (i,step) in result[1..].iter().enumerate() {
+        assert_eq!(result[i].hash_current, step.hash_prev);
+    }
 }
