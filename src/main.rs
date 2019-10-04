@@ -29,7 +29,7 @@ struct Row {
     toDown: String,
     toLeft: String,
     toRight: String,
-    result: String,
+    result: i8,
 
 }
 
@@ -131,6 +131,13 @@ fn main() {
                         let position = step.set.position.clone();
                         let all_sets = puzzle.search_all_sets(position.clone());
                         let set = result[(j+1) as usize].set.position.clone();
+                        let mut result:i8 = match set {
+                            _ if set == all_sets[0] => 0,
+                            _ if set == all_sets[1] => 1,
+                            _ if set == all_sets[2] => 2,
+                            _ if set == all_sets[3] => 3,
+                            _ => -1,
+                        };
                         match wtr.serialize(Row{
                                             size_h: size_h,
                                             size_v: size_v,
@@ -139,7 +146,7 @@ fn main() {
                                             toDown: format!("{:?}", all_sets[1].clone()),
                                             toLeft: format!("{:?}", all_sets[2].clone()),
                                             toRight: format!("{:?}", all_sets[3].clone()),
-                                            result: format!("{:?}", set),
+                                            result: result,
                         }) {
                             Err(err) => {println!("Some error - {}", err)},
                             Ok(t) => {}
