@@ -74,6 +74,59 @@ fn it_search_sets_test() {
     assert_eq!(sets[2], vec![8, 10, 6, 2, 9, 4, 0, 11, 1, 3, 5, 7]);
     assert_eq!(sets[3], vec![8, 10, 6, 2, 9, 4, 11, 1, 0, 3, 5, 7]);
 }
+#[test]
+fn it_search_all_sets_test() {
+    let mut puzzle = Puzzle::new(2, 2).unwrap();
+    assert!(puzzle.set_puzzle(vec![3, 1, 2, 0]));
+    let mut sets: Vec<Vec<i8>>;
+    sets = puzzle.search_all_sets(vec![3, 1, 2, 0]);
+    assert_eq!(sets.len(), 4);
+    assert_eq!(sets[0], vec![3, 0, 2, 1]);
+    assert_eq!(sets[1], vec![3, 1, 2, -1]);
+    assert_eq!(sets[2], vec![3, 1, 0, 2]);
+    assert_eq!(sets[3], vec![3, 1, 2, -1]);
+    sets = puzzle.search_all_sets(vec![3, 1, 0, 2]);
+    assert_eq!(sets.len(), 4);
+    assert_eq!(sets[0], vec![0, 1, 3, 2]);
+    assert_eq!(sets[1], vec![3, 1, -1, 2]);
+    assert_eq!(sets[2], vec![3, 1, -1, 2]);
+    assert_eq!(sets[3], vec![3, 1, 2, 0]);
+    sets = puzzle.search_all_sets(vec![0, 1, 3, 2]);
+    assert_eq!(sets.len(), 4);
+    assert_eq!(sets[0], vec![-1, 1, 3, 2]);
+    assert_eq!(sets[1], vec![3, 1, 0, 2]);
+    assert_eq!(sets[2], vec![-1, 1, 3, 2]);
+    assert_eq!(sets[3], vec![1, 0, 3, 2]);
+    sets = puzzle.search_all_sets(vec![1, 0, 3, 2]);
+    assert_eq!(sets.len(), 4);
+    assert_eq!(sets[0], vec![1, -1, 3, 2]);
+    assert_eq!(sets[1], vec![1, 2, 3, 0]);
+    assert_eq!(sets[2], vec![0, 1, 3, 2]);
+    assert_eq!(sets[3], vec![1, -1, 3, 2]);
+
+    let mut puzzle = Puzzle::new(3, 4).unwrap();
+    assert!(puzzle.set_puzzle(vec![8, 10, 6, 2, 9, 4, 11, 5, 1, 3, 7, 0]));
+    sets = puzzle.search_all_sets(vec![8, 10, 6, 2, 9, 4, 11, 5, 1, 3, 7, 0]);
+    assert_eq!(sets.len(), 4);
+    assert_eq!(sets[0], vec![8, 10, 6, 2, 9, 4, 11, 5, 0, 3, 7, 1]);
+    assert_eq!(sets[1], vec![8, 10, 6, 2, 9, 4, 11, 5, 1, 3, 7, -1]);
+    assert_eq!(sets[2], vec![8, 10, 6, 2, 9, 4, 11, 5, 1, 3, 0, 7]);
+    assert_eq!(sets[3], vec![8, 10, 6, 2, 9, 4, 11, 5, 1, 3, 7, -1]);
+
+    sets = puzzle.search_all_sets(vec![8, 10, 6, 2, 9, 4, 11, 5, 1, 3, 0, 7]);
+    assert_eq!(sets.len(), 4);
+    assert_eq!(sets[0], vec![8, 10, 6, 2, 9, 4, 11, 0, 1, 3, 5, 7]);
+    assert_eq!(sets[1], vec![8, 10, 6, 2, 9, 4, 11, 5, 1, 3, -1, 7]);
+    assert_eq!(sets[2], vec![8, 10, 6, 2, 9, 4, 11, 5, 1, 0, 3, 7]);
+    assert_eq!(sets[3], vec![8, 10, 6, 2, 9, 4, 11, 5, 1, 3, 7, 0]);
+
+    sets = puzzle.search_all_sets(vec![8, 10, 6, 2, 9, 4, 11, 0, 1, 3, 5, 7]);
+    assert_eq!(sets.len(), 4);
+    assert_eq!(sets[0], vec![8, 10, 6, 2, 0, 4, 11, 9, 1, 3, 5, 7]);
+    assert_eq!(sets[1], vec![8, 10, 6, 2, 9, 4, 11, 5, 1, 3, 0, 7]);
+    assert_eq!(sets[2], vec![8, 10, 6, 2, 9, 4, 0, 11, 1, 3, 5, 7]);
+    assert_eq!(sets[3], vec![8, 10, 6, 2, 9, 4, 11, 1, 0, 3, 5, 7]);
+}
 
 #[test]
 fn it_check_linear_conflict_test() {

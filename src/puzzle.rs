@@ -280,6 +280,71 @@ impl Puzzle {
         }
     }
 
+    pub fn search_all_sets(& self, prev: Vec<i8>) -> Vec<Vec<i8>> {
+        if prev.len()  != usize::try_from(self.size_h * self.size_v).unwrap() {
+            vec![]
+        } else {
+            let mut tmp: Vec<i8> = vec![];
+            let mut result: Vec<Vec<i8>> = vec![];
+            let mut c:i8;
+            let pos:i8;
+            let pos_opt:Option<usize>;
+
+            pos_opt = prev.iter().position(|&r| r == 0);
+
+            if pos_opt == None {
+                result
+            } else {
+                pos = pos_opt.unwrap() as i8;
+                if pos / self.size_h > 0 {
+                    tmp = prev.clone();
+                    c = prev[(pos - self.size_h) as usize];
+                    tmp[(pos - self.size_h) as usize] = 0;
+                    tmp[pos as usize] = c;
+                    result.push(tmp);
+                } else {
+                    tmp = prev.clone();
+                    tmp[(pos as usize)] = -1;
+                    result.push(tmp);
+                }
+                if (pos + self.size_h) < (self.size_v*self.size_h) {
+                    tmp = prev.clone();
+                    c = prev[(pos + self.size_h) as usize];
+                    tmp[(pos + self.size_h) as usize] = 0;
+                    tmp[pos as usize] = c;
+                    result.push(tmp);
+                } else {
+                    tmp = prev.clone();
+                    tmp[(pos as usize)] = -1;
+                    result.push(tmp);
+                }
+                if pos % self.size_v > 0 {
+                    tmp = prev.clone();
+                    c = prev[(pos - 1) as usize];
+                    tmp[(pos - 1) as usize] = 0;
+                    tmp[pos as usize] = c;
+                    result.push(tmp);
+                } else {
+                    tmp = prev.clone();
+                    tmp[(pos as usize)] = -1;
+                    result.push(tmp);
+                }
+                if (pos % self.size_h) < (self.size_h-1) {
+                    tmp = prev.clone();
+                    c = prev[(pos + 1) as usize];
+                    tmp[(pos + 1) as usize] = 0;
+                    tmp[pos as usize] = c;
+                    result.push(tmp);
+                } else {
+                    tmp = prev.clone();
+                    tmp[(pos as usize)] = -1;
+                    result.push(tmp);
+                }
+                result
+            }
+        }
+    }
+
     pub fn check_linear_conflict(& self, idx: i8, line: Vec<i8>) -> u32 {
         let mut is_conflict:u32 = 0;
         if line.len() as i8 > self.size_h {
