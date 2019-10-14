@@ -26,10 +26,6 @@ struct Row {
     size_v:i8,
     position: String,
     sets: String,
-    //toUp: String,
-    //toDown: String,
-    //toLeft: String,
-    //toRight: String,
     result: i8,
 
 }
@@ -142,13 +138,8 @@ fn main() {
                         match wtr.serialize(Row{
                                             size_h: size_h,
                                             size_v: size_v,
-                                            //position_: format!("{:?}", position.clone()),
                                             position: format!("{:?}", puzzle.get_points(position.clone())),
                                             sets: format!("{:?}", puzzle.get_states(position.clone())),
-                                            //toUp: format!("{:?}", all_sets[0].clone()),
-                                            //toDown: format!("{:?}", all_sets[1].clone()),
-                                            //toLeft: format!("{:?}", all_sets[2].clone()),
-                                            //toRight: format!("{:?}", all_sets[3].clone()),
                                             result: result,
                         }) {
                             Err(err) => {println!("Some error - {}", err)},
