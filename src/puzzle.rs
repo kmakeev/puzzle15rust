@@ -56,6 +56,12 @@ impl fmt::Debug for Point {
     }
 }
 
+impl PartialEq for Point {
+    fn eq(&self, other: &Point) -> bool {
+        (self.h == other.h) && (self.v == other.v)
+    }
+}
+
 impl fmt::Debug for Set {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "[g - {}, h - {}, f - {}, position - {:?}]", self.g, self.h, self.f,
@@ -80,6 +86,7 @@ impl Puzzle {
             None
         }
     }
+
     pub fn generate(& mut self) {
         let mut is_generate: bool = true;
         let mut x: i8;
@@ -113,6 +120,48 @@ impl Puzzle {
         self.puzzle.push(0);
         self.start = self.puzzle.clone();
     }
+
+    pub fn get_points(& mut self, puz:Vec<i8>) -> Vec<Point> {
+        let mut points =  vec![];
+        for _i in 0..self.size_h*self.size_v {
+            points.push(Point{h:0, v:0})
+        }
+        for (c, i) in puz.iter().enumerate() {
+            if *i != 0 {
+                 points[(*i-1) as usize] = Point{h:c as i8/ self.size_h, v:c as i8 % self.size_h};
+            } else {
+                points[(self.size_h*self.size_v - 1) as usize] = Point{h:c as i8 / self.size_h, v:c as i8 % self.size_h};
+            }
+        }
+        points
+    }
+
+    pub fn get_states(& mut self, puz:Vec<i8>) -> Vec<i8> {
+        let mut tmp: Vec < i8 > = vec![0, 0, 0, 0];
+        if puz.len() != usize::try_from(self.size_h * self.size_v).unwrap() {
+            tmp
+        } else {
+            let pos_opt: Option < usize >;
+            pos_opt = puz.iter().position( | &r | r == 0);
+            if pos_opt != None {
+                let mut pos = pos_opt.unwrap() as i8;
+                if pos / self.size_h > 0 {
+                    tmp[0] = 1;
+                }
+                if (pos + self.size_h) < (self.size_v * self.size_h) {
+                    tmp[1] = 1;
+                }
+                if pos % self.size_v > 0 {
+                    tmp[2] = 1;
+                }
+                if (pos % self.size_h) < (self.size_h - 1) {
+                    tmp[3] = 1;
+                }
+            }
+        tmp
+    }
+}
+
     pub fn set_puzzle(& mut self, puz:Vec<i8>) -> bool {
         let mut is_good:bool = false;
         if puz.len() as i8 % (self.size_v*self.size_h) !=0 {
@@ -156,7 +205,6 @@ impl Puzzle {
         val = key.to_vec();
         val
     }
-
 
     pub fn search_solution(& self) -> Vec<Step> {
         let h:i8 = self.size_h;

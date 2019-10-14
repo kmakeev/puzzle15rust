@@ -1,6 +1,6 @@
 extern crate puzzle;
 
-use puzzle::puzzle::Puzzle as Puzzle;
+use puzzle::puzzle::{Puzzle as Puzzle, Point};
 
 #[test]
 fn it_new_puzzle() {
@@ -30,6 +30,27 @@ fn it_set_puzzle() {
     let mut puzzle = Puzzle::new(3,3).unwrap();
     assert!(!puzzle.set_puzzle(vec![1,2,3,4,5,6,7,8,9,0]));
 
+}
+
+#[test]
+fn it_get_points() {
+    let mut puzzle = Puzzle::new(2, 2).unwrap();
+    assert_eq!(puzzle.get_points(vec![1, 2, 3, 0]), vec![Point { h: 0, v: 0 }, Point { h: 0, v: 1 }, Point { h: 1, v: 0 }, Point { h: 1, v: 1 }]);
+    let mut puzzle = Puzzle::new(3,3).unwrap();
+    assert_eq!(puzzle.get_points(vec![5,7,6,3,0,2,1,4,8]), vec![Point { h: 2, v: 0 }, Point { h: 1, v: 2 }, Point { h: 1, v: 0 },
+                                                                Point { h: 2, v: 1 }, Point { h: 0, v: 0 }, Point { h: 0, v: 2 },
+                                                                Point { h: 0, v: 1 }, Point { h: 2, v: 2 }, Point { h: 1, v: 1 }]);
+}
+
+#[test]
+fn it_get_states() {
+    let mut puzzle = Puzzle::new(2, 2).unwrap();
+    let sets = puzzle.get_states(vec![3, 1, 2, 0]);
+    assert_eq!(sets.len(), 4);
+    assert_eq!(sets, vec![1,0,1,0]);
+    assert_eq!(puzzle.get_states(vec![3, 0, 2, 1]), vec![0,1,1,0]);
+    let mut puzzle = Puzzle::new(3, 3).unwrap();
+    assert_eq!(puzzle.get_states(vec![5,7,6,3,0,2,1,4,8]), vec![1,1,1,1]);
 }
 
 #[test]
