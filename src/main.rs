@@ -25,7 +25,7 @@ struct Row {
     size_h:i8,
     size_v:i8,
     position: String,
-    sets: String,
+    states: String,
     result: i8,
 
 }
@@ -139,7 +139,7 @@ fn main() {
                                             size_h: size_h,
                                             size_v: size_v,
                                             position: format!("{:?}", puzzle.get_points(position.clone())),
-                                            sets: format!("{:?}", puzzle.get_states(position.clone())),
+                                            states: format!("{:?}", puzzle.get_states(position.clone())),
                                             result: result,
                         }) {
                             Err(err) => {println!("Some error - {}", err)},

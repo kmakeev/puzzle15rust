@@ -159,8 +159,8 @@ impl Puzzle {
                 }
             }
         tmp
+        }
     }
-}
 
     pub fn set_puzzle(& mut self, puz:Vec<i8>) -> bool {
         let mut is_good:bool = false;
